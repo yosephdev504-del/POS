@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cocina — Pedidos Pendientes</title>
+  <meta name="description" content="Pantalla de cocina — pedidos pendientes por despachar.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       COCINA — Kitchen Display Styles
+       ═══════════════════════════════════════════ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0f1117;
+      --surface:     #1a1d27;
+      --surface-alt: #22263a;
+      --border:      #2e3347;
+      --text:        #f0f0f5;
+      --text-muted:  #8b8fa3;
+      --accent:      #6c5ce7;
+      --accent-glow: rgba(108, 92, 231, 0.35);
+      --green:       #00b894;
+      --green-glow:  rgba(0, 184, 148, 0.25);
+      --orange:      #fdcb6e;
+      --red:         #e17055;
+      --radius:      14px;
+      --radius-sm:   8px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ── */
+    .kitchen-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #1a1d27 0%, #22263a 100%);
+      border-bottom: 1px solid var(--border);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+
+    .kitchen-header h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      letter-spacing: -0.02em;
+    }
+
+    .kitchen-header h1 .icon {
+      font-size: 1.6rem;
+    }
+
+    .header-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .pending-badge {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      padding: 6px 16px;
+      border-radius: 50px;
+      box-shadow: 0 0 20px var(--accent-glow);
+      animation: pulse-badge 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 12px var(--accent-glow); }
+      50%      { box-shadow: 0 0 28px var(--accent-glow); }
+    }
+
+    .clock {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-clear-delivered {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-clear-delivered:hover {
+      color: var(--red);
+      border-color: var(--red);
+    }
+
+    /* ── Grid ── */
+    .orders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      padding: 24px;
+    }
+
+    @media (max-width: 700px) {
+      .orders-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 16px;
+      }
+    }
+
+    /* ── Order Card ── */
+    .order-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      animation: card-in 0.35s ease-out;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .order-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .order-card.delivered {
+      opacity: 0.4;
+      border-color: var(--green);
+      pointer-events: none;
+    }
+
+    .order-card.delivering {
+      animation: deliverOut 0.5s ease-in forwards;
+    }
+
+    @keyframes deliverOut {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.9) translateY(-10px); }
+    }
+
+    /* Card Header */
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .pedido-number {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .pedido-badge {
+      background: var(--accent);
+      color: white;
+      font-size: 1.3rem;
+      font-weight: 900;
+      padding: 6px 18px;
+      border-radius: 8px;
+      letter-spacing: -0.02em;
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+
+    .pedido-time {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    .alias-tag {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--orange);
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .alias-tag .alias-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    /* Items List */
+    .card-items {
+      padding: 16px 20px 8px;
+    }
+
+    .item-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .item-row:last-child {
+      border-bottom: none;
+    }
+
+    .item-qty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 42px;
+      height: 42px;
+      border-radius: var(--radius-sm);
+      background: var(--accent);
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 900;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    .item-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      flex: 1;
+      line-height: 1.3;
+    }
+
+    /* Card Footer / Actions */
+    .card-footer {
+      padding: 12px 20px 16px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-entregado {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--green);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px var(--green-glow);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-entregado:hover {
+      background: #00d2a0;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px var(--green-glow);
+    }
+
+    .btn-entregado:active {
+      transform: scale(0.97);
+    }
+
+    .btn-entregado svg {
+      flex-shrink: 0;
+    }
+
+    /* ── Empty State ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 16px;
+      color: var(--text-muted);
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 4rem;
+      opacity: 0.4;
+    }
+
+    .empty-state p {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .empty-state .hint {
+      font-size: 0.9rem;
+      opacity: 0.6;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ── Sound notification visual indicator ── */
+    .new-order-flash {
+      animation: flashBorder 0.6s ease-in-out 3;
+    }
+
+    @keyframes flashBorder {
+      0%, 100% { border-color: var(--border); }
+      50%      { border-color: var(--orange); box-shadow: 0 0 24px rgba(253, 203, 110, 0.35); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════ HEADER ═══════ -->
+  <header class="kitchen-header">
+    <h1>
+      <span class="icon">🍳</span>
+      Cocina — Pedidos
+    </h1>
+    <div class="header-info">
+      <span id="pending-badge" class="pending-badge">0 pendientes</span>
+      <span id="kitchen-clock" class="clock"></span>
+      <button id="btn-clear-done" class="btn-clear-delivered" title="Limpiar entregados">Limpiar entregados</button>
+    </div>
+  </header>
+
+  <!-- ═══════ ORDERS CONTAINER ═══════ -->
+  <div id="orders-container" class="orders-grid">
+    <!-- Cards rendered by JS -->
+  </div>
+
+  <!-- ═══════ EMPTY STATE ═══════ -->
+  <div id="empty-state" class="empty-state" hidden>
+    <span class="empty-icon">✅</span>
+    <p>Sin pedidos pendientes</p>
+    <span class="hint">Los pedidos aparecerán automáticamente al cobrar</span>
+  </div>
+
+  <!-- ═══════ AUDIO NOTIFICATION ═══════ -->
+  <!-- Simple beep generated via Web Audio API, no external file needed -->
+
+  <script>
+    /* ═══════════════════════════════════════════
+       COCINA — Kitchen Display Logic
+       ═══════════════════════════════════════════ */
+
+    const $container   = document.getElementById("orders-container");
+    const $emptyState  = document.getElementById("empty-state");
+    const $badge       = document.getElementById("pending-badge");
+    const $clock       = document.getElementById("kitchen-clock");
+    const $btnClearDone = document.getElementById("btn-clear-done");
+
+    // ── Kitchen Queue helpers ──
+    function getQueue() {
+      try {
+        return JSON.parse(localStorage.getItem("isas_kitchen_queue")) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveQueue(queue) {
+      localStorage.setItem("isas_kitchen_queue", JSON.stringify(queue));
+    }
+
+    // ── Track rendered IDs to detect new orders ──
+    let renderedIds = new Set();
+
+    // ── Render ──
+    function render() {
+      const queue = getQueue();
+
+      if (queue.length === 0) {
+        $container.innerHTML = "";
+        $emptyState.hidden = false;
+        $badge.textContent = "0 pendientes";
+        renderedIds.clear();
+        return;
+      }
+
+      $emptyState.hidden = true;
+      $badge.textContent = `${queue.length} pendiente${queue.length !== 1 ? "s" : ""}`;
+
+      // Detect new orders
+      const currentIds = new Set(queue.map(o => o.id));
+      const newOrders = queue.filter(o => !renderedIds.has(o.id));
+
+      // Build HTML
+      $container.innerHTML = queue.map(order => {
+        const d = new Date(order.timestamp);
+        const hora = d.toLocaleTimeString("es-HN", { hour: "2-digit", minute: "2-digit", hour12: true });
+        const isNew = !renderedIds.has(order.id);
+
+        const itemsHtml = order.items.map(item => `
+          <div class="item-row">
+            <span class="item-qty">${item.qty}</span>
+            <span class="item-name">${item.nombre}</span>
+          </div>
+        `).join("");
+
+        return `
+          <div class="order-card${isNew ? ' new-order-flash' : ''}" data-id="${order.id}" id="order-${order.id}">
+            <div class="card-top">
+              <div class="pedido-number">
+                <span class="pedido-badge">#${order.pedido}</span>
+                <span class="pedido-time">${hora}</span>
+              </div>
+              <div class="alias-tag">
+                <span class="alias-icon">👤</span>
+                ${order.alias}
+              </div>
+            </div>
+            <div class="card-items">
+              ${itemsHtml}
+            </div>
+            <div class="card-footer">
+              <button class="btn-entregado" onclick="markDelivered(${order.id})">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Entregado
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      // Play notification sound for new orders
+      if (newOrders.length > 0) {
+        playNotificationSound();
+      }
+
+      // Update tracked IDs
+      renderedIds = currentIds;
+    }
+
+    // ── Mark as delivered ──
+    function markDelivered(id) {
+      const card = document.getElementById(`order-${id}`);
+      if (card) {
+        card.classList.add("delivering");
+        setTimeout(() => {
+          const queue = getQueue().filter(o => o.id !== id);
+          saveQueue(queue);
+          render();
+        }, 500);
+      }
+    }
+
+    // ── Clear all delivered (cleanup) ──
+    $btnClearDone.addEventListener("click", () => {
+      // This clears the entire queue (only shown items are pending anyway)
+      if (confirm("¿Limpiar todos los pedidos de la pantalla?")) {
+        saveQueue([]);
+        render();
+      }
+    });
+
+    // ── Notification sound (Web Audio API) ──
+    function playNotificationSound() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.2);
+
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+      } catch {}
+    }
+
+    // ── Clock ──
+    function updateClock() {
+      $clock.textContent = new Date().toLocaleTimeString("es-HN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      });
+    }
+
+    // ── Listen for localStorage changes from POS tab ──
+    window.addEventListener("storage", (e) => {
+      if (e.key === "isas_kitchen_queue") {
+        render();
+      }
+    });
+
+    // ── Also poll every 2 seconds (for same-device / same-browser use) ──
+    setInterval(render, 2000);
+
+    // ── Init ──
+    render();
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>

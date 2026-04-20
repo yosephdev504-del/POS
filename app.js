@@ -250,25 +250,54 @@ function renderOrder() {
 
 
 // ═══════════════════════════════════════════
-// 5. CHARGE / SAVE SALE
+// 5. CHARGE / SAVE SALE + SEND TO KITCHEN
 // ═══════════════════════════════════════════
+function getNextPedidoNumber() {
+  const num = parseInt(localStorage.getItem("isas_pedido_counter") || "0", 10) + 1;
+  localStorage.setItem("isas_pedido_counter", num.toString());
+  return num;
+}
+
 function chargeSale() {
   if (order.length === 0) return;
 
+  const pedidoNum = getNextPedidoNumber();
+
   const sale = {
     id: Date.now(),
+    pedido: pedidoNum,
     alias: $customerAlias.value.trim() || "Sin nombre",
     items: order.map(i => ({ nombre: i.nombre, precio: i.precio, qty: i.qty })),
     total: getTotal(),
     timestamp: new Date().toISOString()
   };
 
+  // Save to sales history
   const sales = getSales();
   sales.push(sale);
   localStorage.setItem("isas_sales", JSON.stringify(sales));
 
-  showToast(`¡Cobrado L ${sale.total.toFixed(2)}!`);
+  // Push to kitchen queue (pending orders)
+  const queue = getKitchenQueue();
+  queue.push({
+    id: sale.id,
+    pedido: pedidoNum,
+    alias: sale.alias,
+    items: sale.items,
+    timestamp: sale.timestamp
+  });
+  localStorage.setItem("isas_kitchen_queue", JSON.stringify(queue));
+
+  showToast(`¡Pedido #${pedidoNum} cobrado — L ${sale.total.toFixed(2)}!`);
   clearOrder();
+}
+
+function getKitchenQueue() {
+  try {
+    return JSON.parse(localStorage.getItem("isas_kitchen_queue")) || [];
+  } catch {
+    return [];
+  }
 }
 
 
