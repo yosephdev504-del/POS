@@ -1,15 +1,19 @@
-# ISAS Baleadas POS System
+# POS — Sistema de Punto de Venta para Restaurantes
 
-Un sistema de Punto de Venta (POS) rápido y moderno diseñado para baleadas y comida casera. Construido con Vanilla JavaScript, HTML5 y CSS3 puro.
+Un sistema de Punto de Venta (POS) rápido, moderno y generalizado, diseñado para cualquier tipo de restaurante o negocio de comida. Construido con Vanilla JavaScript, HTML5 y CSS3 puro — sin dependencias externas.
 
 ## 🚀 Características
 
-- **Diseño Responsivo**: Optimizado para tablets de 8 pulgadas y laptops de 13 pulgadas.
-- **Interfaz Dividida**: Menú a la izquierda (70%) y Factura a la derecha (30%).
+- **Menú Dinámico**: Agrega, edita y elimina productos desde la interfaz. Personaliza nombres y precios.
+- **Logo Personalizable**: Sube tu propio logo desde el panel de configuración.
 - **Gestión de Pedidos**: Agrega productos con un toque, ajusta cantidades y elimina ítems fácilmente.
-- **Persistencia**: Las ventas se guardan localmente en el navegador (`localStorage`).
+- **Pantalla de Cocina** (`/cocina`): Los pedidos cobrados aparecen en tiempo real en una pantalla dedicada para la cocina, con botón "Entregado" para despachar.
+- **Control de Gastos** (`/gastos`): Registra y categoriza todos los gastos operativos del negocio (materia prima, nómina, servicios, limpieza, mermas, mantenimiento, etc.).
 - **Dashboard de Ventas**: Visualiza ingresos diarios, semanales y número de ventas.
-- **Estética Moderno**: Modo oscuro con acentos ámbar y micro-animaciones suaves.
+- **Exportación**: Descarga el historial de ventas en CSV o imprime reportes en PDF.
+- **Persistencia Local**: Toda la información se guarda en el navegador (`localStorage`).
+- **Diseño Responsivo**: Optimizado para tablets y laptops con interfaz dividida.
+- **Estética Moderna**: Modo oscuro con acentos ámbar y micro-animaciones suaves.
 
 ## 🛠️ Tecnologías
 
@@ -17,34 +21,31 @@ Un sistema de Punto de Venta (POS) rápido y moderno diseñado para baleadas y c
 - CSS3 (Variables, Flexbox, Grid, Animaciones)
 - JavaScript (Lógica de negocio, LocalStorage API)
 
-## 📋 Menú de Productos
+## 📂 Estructura del Proyecto
 
-- Mantequilla
-- Con Queso
-- Queso y Mantequilla
-- Huevo y Chorizo
-- Con Huevo y Aguacate
-- Aguacate
-- Carne
-- Parrillero
-- Huevo Carne Aguacate
-- Mega Baleada con Carne
-- Huevo y Carne
-- Carne y Aguacate
-- Huevo
-- Carne Queso Mantequilla
-- Huevo Queso Mantequilla
-- Salchicha
-- Pollo Frito
-- Carne Asada
-- Huevo Duro
-- Jugo Natural
+```
+POS/
+├── index.html          # Punto de Venta principal
+├── app.js              # Lógica del POS
+├── styles.css          # Estilos globales
+├── uploads/            # Logo personalizado
+├── cocina/
+│   └── index.html      # Pantalla de cocina (pedidos pendientes)
+└── gastos/
+    └── index.html      # Control de gastos operativos
+```
 
 ## 🖥️ Cómo usar
 
 1. Clona este repositorio o descarga los archivos.
-2. Abre `index.html` en cualquier navegador web moderno.
-3. ¡Empieza a vender!
+2. Abre `index.html` en cualquier navegador web moderno para el punto de venta.
+3. Abre `cocina/index.html` en la tablet o pantalla de cocina para ver los pedidos.
+4. Abre `gastos/index.html` para registrar y consultar los gastos del negocio.
+5. ¡Empieza a vender!
+
+## 📌 Versión
+
+**v0.1** — Menú dinámico, cocina en tiempo real, reportes básicos y control de gastos.
 
 ---
-Desarrollado con ❤️ para ISAS Baleadas.
+Desarrollado con ❤️ para el sector restaurantero.

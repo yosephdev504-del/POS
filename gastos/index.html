@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>POS — Control de Gastos</title>
+  <meta name="description" content="Registro y control de gastos operativos para restaurantes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       GASTOS — Expense Tracker Styles
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #0f1117;
+      --bg-secondary:  #161822;
+      --bg-card:       #1c1f2e;
+      --bg-card-hover: #252840;
+      --bg-input:      #1c1f2e;
+      --bg-modal:      #1a1d2e;
+
+      --accent:        #f59e0b;
+      --accent-light:  #fbbf24;
+      --accent-dark:   #d97706;
+      --accent-glow:   rgba(245, 158, 11, 0.15);
+
+      --success:       #10b981;
+      --success-glow:  rgba(16, 185, 129, 0.15);
+      --danger:        #ef4444;
+      --danger-glow:   rgba(239, 68, 68, 0.12);
+
+      --indigo:        #6366f1;
+      --indigo-glow:   rgba(99, 102, 241, 0.15);
+
+      --teal:          #14b8a6;
+      --teal-glow:     rgba(20, 184, 166, 0.15);
+
+      --text:          #f1f5f9;
+      --text-secondary:#94a3b8;
+      --text-muted:    #64748b;
+
+      --border:        rgba(255, 255, 255, 0.06);
+      --border-accent: rgba(245, 158, 11, 0.25);
+
+      --radius-sm:     8px;
+      --radius-md:     12px;
+      --radius-lg:     16px;
+      --radius-xl:     20px;
+
+      --shadow-card:   0 2px 8px rgba(0,0,0,0.25);
+      --shadow-lg:     0 8px 32px rgba(0,0,0,0.45);
+    }
+
+    html { font-size: 16px; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    /* ═══════ HEADER ═══════ */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      height: 60px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-left .icon { font-size: 1.5rem; }
+
+    .header-left h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .header-left h1 span {
+      background: linear-gradient(135deg, var(--accent), #f97316);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-clock {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .btn-icon:hover {
+      background: rgba(245, 158, 11, 0.25);
+      transform: translateY(-1px);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    /* ═══════ MAIN LAYOUT ═══════ */
+    .app-main {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      height: calc(100dvh - 60px);
+    }
+
+    @media (max-width: 860px) {
+      .app-main {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    /* ═══════ LEFT: CATEGORY PANEL ═══════ */
+    .categories-panel {
+      padding: 16px 20px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--bg-card) transparent;
+    }
+
+    .categories-panel::-webkit-scrollbar { width: 6px; }
+    .categories-panel::-webkit-scrollbar-track { background: transparent; }
+    .categories-panel::-webkit-scrollbar-thumb { background: var(--bg-card); border-radius: 99px; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .panel-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 99px;
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      border: 1px solid var(--border-accent);
+    }
+
+    /* Category Accordion */
+    .category-group {
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.15s;
+    }
+
+    .category-header:hover { background: var(--bg-card-hover); }
+
+    .category-header .cat-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .category-header .cat-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .category-header .chevron {
+      transition: transform 0.25s ease;
+      color: var(--text-muted);
+    }
+
+    .category-group.open .category-header .chevron {
+      transform: rotate(180deg);
+    }
+
+    .category-items {
+      display: none;
+      padding: 4px 8px 8px;
+    }
+
+    .category-group.open .category-items {
+      display: block;
+    }
+
+    /* Item buttons */
+    .item-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 11px 14px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-align: left;
+    }
+
+    .item-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border);
+    }
+
+    .item-btn:active {
+      transform: scale(0.98);
+    }
+
+    .item-btn .plus-icon {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: var(--accent-glow);
+      color: var(--accent-light);
+      font-size: 1rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .item-btn:hover .plus-icon {
+      background: var(--accent);
+      color: #000;
+    }
+
+    .item-btn.flash {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    /* ═══════ RIGHT: EXPENSE LOG PANEL ═══════ */
+    .log-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+    }
+
+    @media (max-width: 860px) {
+      .log-panel {
+        border-left: none;
+        border-top: 1px solid var(--border);
+        min-height: 50vh;
+      }
+    }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .log-header h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .btn-ghost-danger {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--danger-glow);
+      color: var(--danger);
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-ghost-danger:hover { background: rgba(239,68,68,0.22); }
+
+    /* Custom amount input */
+    .custom-amount {
+      padding: 10px 16px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .amount-input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .amount-input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .amount-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .note-input {
+      flex: 1.5;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-input);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 500;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .note-input::placeholder { color: var(--text-muted); font-weight: 400; }
+    .note-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    /* Expense list */
+    .expense-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--bg-card) transparent;
+    }
+
+    .expense-list::-webkit-scrollbar { width: 5px; }
+    .expense-list::-webkit-scrollbar-track { background: transparent; }
+    .expense-list::-webkit-scrollbar-thumb { background: var(--bg-card); border-radius: 99px; }
+
+    .empty-log {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 40px 16px;
+      color: var(--text-muted);
+      text-align: center;
+      font-size: 0.85rem;
+    }
+
+    .expense-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      animation: slideIn 0.22s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .expense-item .exp-info { flex: 1; min-width: 0; }
+
+    .expense-item .exp-name {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .expense-item .exp-cat {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    .expense-item .exp-note {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      font-style: italic;
+      margin-top: 1px;
+    }
+
+    .expense-item .exp-amount {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--danger);
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .expense-item .btn-remove-exp {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: var(--danger-glow);
+      color: var(--danger);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .expense-item .btn-remove-exp:hover { background: rgba(239,68,68,0.25); }
+    .expense-item .btn-remove-exp:active { transform: scale(0.9); }
+
+    /* ═══════ FOOTER TOTALS ═══════ */
+    .log-footer {
+      padding: 12px 16px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .total-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .total-label {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      letter-spacing: 0.08em;
+    }
+
+    .total-amount {
+      font-size: 1.65rem;
+      font-weight: 900;
+      color: var(--danger);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-save {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 15px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent), #f97316);
+      color: #000;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(245,158,11,0.3);
+    }
+
+    .btn-save:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(245,158,11,0.4);
+    }
+
+    .btn-save:active:not(:disabled) { transform: scale(0.97); }
+
+    .btn-save:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* ═══════ MODAL (History) ═══════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 900;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal-overlay[hidden] { display: none; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .modal {
+      width: 100%;
+      max-width: 680px;
+      max-height: 85dvh;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-modal);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      animation: modalSlide 0.25s ease;
+      overflow: hidden;
+    }
+
+    @keyframes modalSlide {
+      from { opacity: 0; transform: translateY(20px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+
+    .btn-icon-close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      color: var(--text-secondary);
+      font-size: 1.4rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Stats */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .stat-card.stat-today { background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.03)); border-color: rgba(239,68,68,0.15); }
+    .stat-card.stat-week  { background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.03)); border-color: rgba(99,102,241,0.15); }
+    .stat-card.stat-count { background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03)); border-color: rgba(245,158,11,0.15); }
+
+    .stat-icon { font-size: 1.4rem; }
+    .stat-info { display: flex; flex-direction: column; gap: 2px; }
+    .stat-label { font-size: 0.68rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-value { font-size: 1.15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+    /* History table */
+    .table-wrapper {
+      max-height: 300px;
+      overflow-y: auto;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      scrollbar-width: thin;
+      scrollbar-color: var(--bg-card) transparent;
+    }
+
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+
+    .history-table thead { position: sticky; top: 0; z-index: 1; }
+
+    .history-table th {
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-weight: 700;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-table td {
+      padding: 8px 10px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table .text-right { text-align: right; }
+    .history-table .amount-cell { font-weight: 700; color: var(--danger); }
+
+    .no-history {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .btn-export {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex: 1;
+    }
+
+    .btn-export:hover { background: var(--bg-card-hover); border-color: var(--accent); }
+
+    .btn-danger {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: 1px solid rgba(239,68,68,0.3);
+      border-radius: var(--radius-sm);
+      background: var(--danger-glow);
+      color: var(--danger);
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-danger:hover { background: rgba(239,68,68,0.22); }
+
+    /* ═══════ TOAST ═══════ */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 22px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      color: var(--success);
+      font-size: 0.88rem;
+      font-weight: 600;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast[hidden] { display: none; }
+
+    /* Category icon color classes */
+    .cat-servicios  { background: rgba(99,102,241,0.15);  color: #818cf8; }
+    .cat-alimentos  { background: rgba(245,158,11,0.15);  color: #fbbf24; }
+    .cat-bebidas    { background: rgba(20,184,166,0.15);   color: #2dd4bf; }
+    .cat-empaques   { background: rgba(168,85,247,0.15);   color: #c084fc; }
+    .cat-limpieza   { background: rgba(56,189,248,0.15);   color: #38bdf8; }
+    .cat-nomina     { background: rgba(16,185,129,0.15);   color: #34d399; }
+    .cat-mermas     { background: rgba(239,68,68,0.15);    color: #f87171; }
+    .cat-manto      { background: rgba(251,146,60,0.15);   color: #fb923c; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════ HEADER ═══════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="icon">💸</span>
+      <h1>Control de <span>Gastos</span></h1>
+    </div>
+    <div class="header-right">
+      <span id="clock" class="header-clock"></span>
+      <button id="btn-history" class="btn-icon" title="Historial de Gastos">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        <span>Historial</span>
+      </button>
+      <a href="../index.html" class="btn-icon" title="Volver al POS">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <span>POS</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- ═══════ MAIN LAYOUT ═══════ -->
+  <main class="app-main">
+
+    <!-- LEFT: Categories -->
+    <section class="categories-panel" id="categories-panel">
+      <div class="panel-header">
+        <h2>Categorías de Gasto</h2>
+        <span class="badge" id="cat-count"></span>
+      </div>
+      <div id="categories-container">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- RIGHT: Expense Log -->
+    <aside class="log-panel">
+      <div class="log-header">
+        <h2>Registro Actual</h2>
+        <button id="btn-clear-log" class="btn-ghost-danger" title="Limpiar registro">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Limpiar
+        </button>
+      </div>
+
+      <!-- Amount + Note input -->
+      <div class="custom-amount">
+        <input type="number" id="expense-amount" class="amount-input" placeholder="Monto L" min="0.01" step="0.01" autocomplete="off"/>
+        <input type="text" id="expense-note" class="note-input" placeholder="Nota (opcional)" autocomplete="off"/>
+      </div>
+
+      <!-- Expense items -->
+      <div id="expense-list" class="expense-list">
+        <div id="empty-log" class="empty-log">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.35"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <p>Selecciona un gasto de las categorías</p>
+        </div>
+      </div>
+
+      <!-- Total & Save -->
+      <div class="log-footer">
+        <div class="total-row">
+          <span class="total-label">TOTAL GASTOS</span>
+          <span id="total-amount" class="total-amount">L 0.00</span>
+        </div>
+        <button id="btn-save" class="btn-save" disabled>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Guardar Registro
+        </button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ═══════ HISTORY MODAL ═══════ -->
+  <div id="modal-overlay" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+          Historial de Gastos
+        </h2>
+        <button id="btn-close-modal" class="btn-icon-close" aria-label="Cerrar">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Stats -->
+        <div class="stat-grid">
+          <div class="stat-card stat-today">
+            <div class="stat-icon">📅</div>
+            <div class="stat-info">
+              <span class="stat-label">Gastos de Hoy</span>
+              <span id="stat-today" class="stat-value" style="color:var(--danger)">L 0.00</span>
+            </div>
+          </div>
+          <div class="stat-card stat-week">
+            <div class="stat-icon">📆</div>
+            <div class="stat-info">
+              <span class="stat-label">Gastos de la Semana</span>
+              <span id="stat-week" class="stat-value" style="color:var(--indigo)">L 0.00</span>
+            </div>
+          </div>
+          <div class="stat-card stat-count">
+            <div class="stat-icon">🧾</div>
+            <div class="stat-info">
+              <span class="stat-label">Registros Hoy</span>
+              <span id="stat-count" class="stat-value" style="color:var(--accent-light)">0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Detalle</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody id="history-table-body"></tbody>
+          </table>
+        </div>
+        <p id="no-history-msg" class="no-history" hidden>Sin gastos registrados.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-export-csv" class="btn-export">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Exportar CSV
+        </button>
+        <button id="btn-clear-history" class="btn-danger">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Borrar historial
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════ TOAST ═══════ -->
+  <div id="toast" class="toast" hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <span id="toast-msg">Guardado</span>
+  </div>
+
+  <script>
+    /* ═══════════════════════════════════════════
+       GASTOS — Expense Tracker Logic
+       ═══════════════════════════════════════════ */
+
+    // ── Categories Data ──
+    const CATEGORIES = {
+      servicios_fijos: {
+        titulo: "Servicios Fijos",
+        icon: "🏠",
+        cssClass: "cat-servicios",
+        items: [
+          "Alquiler de local",
+          "Energía eléctrica",
+          "Agua potable",
+          "Gas LPG / Natural",
+          "Internet y telefonía",
+          "Extracción de basura",
+          "Seguro del local"
+        ]
+      },
+      materia_prima_alimentos: {
+        titulo: "Materia Prima (Alimentos)",
+        icon: "🥩",
+        cssClass: "cat-alimentos",
+        items: [
+          "Carnes rojas (Res, cerdo)",
+          "Aves (Pollo, pavo)",
+          "Pescados y mariscos",
+          "Harinas y levaduras",
+          "Lácteos y huevos (Quesos, leche, mantequilla)",
+          "Vegetales y hortalizas",
+          "Frutas frescas y congeladas",
+          "Abarrotes secos (Arroz, frijoles, pastas)",
+          "Aceites y mantecas",
+          "Especias, sal y condimentos",
+          "Salsas y aderezos"
+        ]
+      },
+      materia_prima_bebidas: {
+        titulo: "Materia Prima (Bebidas)",
+        icon: "🥤",
+        cssClass: "cat-bebidas",
+        items: [
+          "Refrescos y sodas",
+          "Agua embotellada",
+          "Licores y cervezas",
+          "Café, té e infusiones",
+          "Jarabes y pulpas"
+        ]
+      },
+      empaques_y_desechables: {
+        titulo: "Empaques y Suministros",
+        icon: "📦",
+        cssClass: "cat-empaques",
+        items: [
+          "Envases para llevar (Cajas, domos)",
+          "Vasos, tapas y pajillas",
+          "Cubiertos desechables",
+          "Bolsas de empaque",
+          "Servilletas",
+          "Papel aluminio, encerado y plástico film"
+        ]
+      },
+      limpieza_y_sanidad: {
+        titulo: "Limpieza y Sanidad",
+        icon: "🧹",
+        cssClass: "cat-limpieza",
+        items: [
+          "Detergentes y desengrasantes",
+          "Desinfectantes y cloro",
+          "Bolsas para basura (industriales y pequeñas)",
+          "Implementos (Escobas, trapeadores, esponjas)",
+          "Papel higiénico y jabón de manos (Baños)",
+          "Servicio de fumigación y control de plagas"
+        ]
+      },
+      nomina_y_personal: {
+        titulo: "Nómina y Personal",
+        icon: "👥",
+        cssClass: "cat-nomina",
+        items: [
+          "Salarios base",
+          "Pago de horas extras",
+          "Bonos e incentivos",
+          "Cargas sociales / Seguro social",
+          "Uniformes y equipo de protección"
+        ]
+      },
+      mermas_y_perdidas: {
+        titulo: "Mermas y Pérdidas",
+        icon: "⚠️",
+        cssClass: "cat-mermas",
+        items: [
+          "Comida vencida / Ingredientes caducados",
+          "Errores de preparación en cocina",
+          "Derrames o accidentes",
+          "Platillos devueltos por clientes",
+          "Faltantes de inventario"
+        ]
+      },
+      mantenimiento_y_otros: {
+        titulo: "Mantenimiento y Otros Gastos",
+        icon: "🔧",
+        cssClass: "cat-manto",
+        items: [
+          "Reparación de maquinaria (Estufas, refrigeradores)",
+          "Mantenimiento de infraestructura (Plomería, pintura)",
+          "Marketing y publicidad en redes sociales",
+          "Renovación de permisos y licencias operativas",
+          "Papelería (Rollos térmicos para facturas, lapiceros)",
+          "Comisiones bancarias o de pasarela de pago"
+        ]
+      }
+    };
+
+    // ── State ──
+    let currentExpenses = []; // { name, category, catKey, amount, note }
+    let selectedItem = null;  // { name, category, catKey } — the item selected, waiting for amount
+
+    // ── DOM Refs ──
+    const $ = id => document.getElementById(id);
+    const $container     = $("categories-container");
+    const $catCount      = $("cat-count");
+    const $expenseList   = $("expense-list");
+    const $emptyLog      = $("empty-log");
+    const $totalAmount   = $("total-amount");
+    const $btnSave       = $("btn-save");
+    const $btnClearLog   = $("btn-clear-log");
+    const $amountInput   = $("expense-amount");
+    const $noteInput     = $("expense-note");
+    const $clock         = $("clock");
+
+    // History Modal
+    const $modalOverlay  = $("modal-overlay");
+    const $btnHistory    = $("btn-history");
+    const $btnCloseModal = $("btn-close-modal");
+    const $historyBody   = $("history-table-body");
+    const $noHistoryMsg  = $("no-history-msg");
+    const $statToday     = $("stat-today");
+    const $statWeek      = $("stat-week");
+    const $statCount     = $("stat-count");
+    const $btnExportCSV  = $("btn-export-csv");
+    const $btnClearHist  = $("btn-clear-history");
+
+    // Toast
+    const $toast    = $("toast");
+    const $toastMsg = $("toast-msg");
+
+
+    // ═══════════════════════════════════════════
+    // 1. RENDER CATEGORIES (Accordion)
+    // ═══════════════════════════════════════════
+    function renderCategories() {
+      const keys = Object.keys(CATEGORIES);
+      let totalItems = 0;
+
+      $container.innerHTML = keys.map(key => {
+        const cat = CATEGORIES[key];
+        totalItems += cat.items.length;
+
+        const itemsHtml = cat.items.map(item => `
+          <button class="item-btn" data-cat-key="${key}" data-cat="${cat.titulo}" data-name="${item}">
+            <span>${item}</span>
+            <span class="plus-icon">+</span>
+          </button>
+        `).join("");
+
+        return `
+          <div class="category-group" data-key="${key}">
+            <button class="category-header">
+              <div class="cat-left">
+                <span class="cat-icon ${cat.cssClass}">${cat.icon}</span>
+                <span>${cat.titulo}</span>
+              </div>
+              <svg class="chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="category-items">
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      $catCount.textContent = `${totalItems} items`;
+
+      // Accordion toggle
+      $container.querySelectorAll(".category-header").forEach(header => {
+        header.addEventListener("click", () => {
+          header.closest(".category-group").classList.toggle("open");
+        });
+      });
+
+      // Item click — add to expense log
+      $container.querySelectorAll(".item-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const name = btn.dataset.name;
+          const category = btn.dataset.cat;
+          const catKey = btn.dataset.catKey;
+          addExpense(name, category, catKey, btn);
+        });
+      });
+    }
+
+
+    // ═══════════════════════════════════════════
+    // 2. ADD / REMOVE EXPENSES
+    // ═══════════════════════════════════════════
+    function addExpense(name, category, catKey, btnEl) {
+      const amount = parseFloat($amountInput.value);
+      const note   = $noteInput.value.trim();
+
+      if (isNaN(amount) || amount <= 0) {
+        showToast("⚠️ Ingresa un monto válido");
+        $amountInput.focus();
+        return;
+      }
+
+      currentExpenses.push({ name, category, catKey, amount, note });
+
+      // Flash animation
+      if (btnEl) {
+        btnEl.classList.add("flash");
+        setTimeout(() => btnEl.classList.remove("flash"), 300);
+      }
+
+      // Clear amount and note after adding
+      $amountInput.value = "";
+      $noteInput.value = "";
+
+      renderExpenseList();
+    }
+
+    function removeExpense(idx) {
+      currentExpenses.splice(idx, 1);
+      renderExpenseList();
+    }
+
+    function clearLog() {
+      currentExpenses = [];
+      $amountInput.value = "";
+      $noteInput.value = "";
+      renderExpenseList();
+    }
+
+    function getTotal() {
+      return currentExpenses.reduce((sum, e) => sum + e.amount, 0);
+    }
+
+
+    // ═══════════════════════════════════════════
+    // 3. RENDER EXPENSE LIST
+    // ═══════════════════════════════════════════
+    function renderExpenseList() {
+      const total = getTotal();
+
+      $emptyLog.style.display = currentExpenses.length === 0 ? "flex" : "none";
+
+      // Remove old items
+      $expenseList.querySelectorAll(".expense-item").forEach(el => el.remove());
+
+      currentExpenses.forEach((exp, idx) => {
+        const row = document.createElement("div");
+        row.className = "expense-item";
+        row.innerHTML = `
+          <div class="exp-info">
+            <div class="exp-name">${exp.name}</div>
+            <div class="exp-cat">${exp.category}</div>
+            ${exp.note ? `<div class="exp-note">"${exp.note}"</div>` : ""}
+          </div>
+          <span class="exp-amount">- L ${exp.amount.toFixed(2)}</span>
+          <button class="btn-remove-exp" aria-label="Eliminar" data-idx="${idx}">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        `;
+
+        row.querySelector(".btn-remove-exp").addEventListener("click", () => removeExpense(idx));
+        $expenseList.appendChild(row);
+      });
+
+      $totalAmount.textContent = `L ${total.toFixed(2)}`;
+      $btnSave.disabled = currentExpenses.length === 0;
+    }
+
+
+    // ═══════════════════════════════════════════
+    // 4. SAVE EXPENSE LOG
+    // ═══════════════════════════════════════════
+    function saveExpenseLog() {
+      if (currentExpenses.length === 0) return;
+
+      const record = {
+        id: Date.now(),
+        items: currentExpenses.map(e => ({ ...e })),
+        total: getTotal(),
+        timestamp: new Date().toISOString()
+      };
+
+      const history = getHistory();
+      history.push(record);
+      localStorage.setItem("pos_gastos_history", JSON.stringify(history));
+
+      showToast(`✅ Registro guardado — L ${record.total.toFixed(2)}`);
+      clearLog();
+    }
+
+
+    // ═══════════════════════════════════════════
+    // 5. HISTORY (localStorage)
+    // ═══════════════════════════════════════════
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem("pos_gastos_history")) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    function getTodayHistory() {
+      const today = new Date().toDateString();
+      return getHistory().filter(r => new Date(r.timestamp).toDateString() === today);
+    }
+
+    function getWeekHistory() {
+      const now = new Date();
+      const day = now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+      monday.setHours(0, 0, 0, 0);
+      return getHistory().filter(r => new Date(r.timestamp) >= monday);
+    }
+
+
+    // ═══════════════════════════════════════════
+    // 6. HISTORY MODAL
+    // ═══════════════════════════════════════════
+    function openHistory() {
+      const todayRecords = getTodayHistory();
+      const weekRecords  = getWeekHistory();
+      const all          = getHistory();
+
+      const todayTotal = todayRecords.reduce((sum, r) => sum + r.total, 0);
+      const weekTotal  = weekRecords.reduce((sum, r) => sum + r.total, 0);
+
+      $statToday.textContent = `L ${todayTotal.toFixed(2)}`;
+      $statWeek.textContent  = `L ${weekTotal.toFixed(2)}`;
+      $statCount.textContent = todayRecords.length;
+
+      // Build table
+      if (all.length === 0) {
+        $historyBody.innerHTML = "";
+        $noHistoryMsg.hidden = false;
+      } else {
+        $noHistoryMsg.hidden = true;
+        const sorted = [...all].reverse();
+        $historyBody.innerHTML = sorted.map(r => {
+          const d = new Date(r.timestamp);
+          const fecha = d.toLocaleDateString("es-HN");
+          const hora  = d.toLocaleTimeString("es-HN", { hour: "2-digit", minute: "2-digit", hour12: true });
+          const detalle = r.items.map(i => `${i.name}`).join(", ");
+          return `
+            <tr>
+              <td>${fecha}</td>
+              <td>${hora}</td>
+              <td>${detalle}</td>
+              <td class="text-right amount-cell">L ${r.total.toFixed(2)}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      $modalOverlay.hidden = false;
+    }
+
+    function closeHistory() {
+      $modalOverlay.hidden = true;
+    }
+
+    function clearHistory() {
+      if (!confirm("⚠️ ¿Borrar TODO el historial de gastos?")) return;
+      if (!confirm("⚠️ Esta acción NO se puede deshacer. ¿Confirmar?")) return;
+      localStorage.removeItem("pos_gastos_history");
+      showToast("Historial de gastos borrado");
+      closeHistory();
+    }
+
+
+    // ═══════════════════════════════════════════
+    // 7. EXPORT CSV
+    // ═══════════════════════════════════════════
+    function exportCSV() {
+      const history = getHistory();
+      if (history.length === 0) {
+        showToast("No hay gastos para exportar");
+        return;
+      }
+
+      const BOM = "\uFEFF";
+      const header = "Fecha,Hora,Concepto,Categoría,Nota,Monto (L)\n";
+
+      const rows = [];
+      history.forEach(r => {
+        const d = new Date(r.timestamp);
+        const fecha = d.toLocaleDateString("es-HN");
+        const hora  = d.toLocaleTimeString("es-HN", { hour: "2-digit", minute: "2-digit", hour12: true });
+        r.items.forEach(item => {
+          rows.push(`"${fecha}","${hora}","${item.name}","${item.category}","${item.note || ""}","${item.amount.toFixed(2)}"`);
+        });
+      });
+
+      const csv = BOM + header + rows.join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url  = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Gastos_${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("CSV descargado");
+    }
+
+
+    // ═══════════════════════════════════════════
+    // TOAST
+    // ═══════════════════════════════════════════
+    let toastTimer = null;
+    function showToast(msg) {
+      $toastMsg.textContent = msg;
+      $toast.hidden = false;
+      void $toast.offsetWidth;
+      $toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        $toast.classList.remove("show");
+        setTimeout(() => { $toast.hidden = true; }, 300);
+      }, 2500);
+    }
+
+
+    // ═══════════════════════════════════════════
+    // CLOCK
+    // ═══════════════════════════════════════════
+    function updateClock() {
+      $clock.textContent = new Date().toLocaleTimeString("es-HN", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true
+      });
+    }
+
+
+    // ═══════════════════════════════════════════
+    // EVENT LISTENERS
+    // ═══════════════════════════════════════════
+    $btnSave.addEventListener("click", saveExpenseLog);
+
+    $btnClearLog.addEventListener("click", () => {
+      if (currentExpenses.length === 0) return;
+      if (confirm("¿Limpiar el registro actual?")) clearLog();
+    });
+
+    $btnHistory.addEventListener("click", openHistory);
+    $btnCloseModal.addEventListener("click", closeHistory);
+    $btnClearHist.addEventListener("click", clearHistory);
+    $btnExportCSV.addEventListener("click", exportCSV);
+
+    // Close modal on overlay click
+    $modalOverlay.addEventListener("click", (e) => {
+      if (e.target === $modalOverlay) closeHistory();
+    });
+
+    // Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !$modalOverlay.hidden) closeHistory();
+    });
+
+
+    // ═══════════════════════════════════════════
+    // INIT
+    // ═══════════════════════════════════════════
+    function init() {
+      renderCategories();
+      renderExpenseList();
+      updateClock();
+      setInterval(updateClock, 1000);
+    }
+
+    init();
+  </script>
+</body>
+</html>
